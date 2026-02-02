@@ -1,0 +1,93 @@
+name: Usage
+on:
+  workflow_dispatch:
+    inputs:
+      given_ref:
+        description: Pick a tag (eg. v0.0)
+        required: false
+
+jobs:
+  build:
+    name: Build usage image
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Checkout specific ref if provided
+        if: github.event.inputs.given_ref != ''
+        run: |
+          git fetch --prune --tags origin
+          git reset --hard origin/main
+          git reset --hard "${{ github.event.inputs.given_ref }}"
+          git clean -fd
+          git submodule update --init --recursive
+          echo "Checked out ref: $(git rev-parse HEAD)"
+
+      - name: Capture runner UID/GID
+        id: ids
+        run: |
+          echo "uid=$(id -u)" >> "$GITHUB_OUTPUT"
+          echo "gid=$(id -g)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build usage image (cached)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          load: true
+          tags: usage:ci
+          build-args: |
+            uid=${{ steps.ids.outputs.uid }}
+            gid=${{ steps.ids.outputs.gid }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Export image artifact
+        run: docker save usage:ci -o usage-image.tar
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: usage-image
+          path: usage-image.tar
+
+  run:
+    name: Run repo script
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Capture runner UID/GID
+        id: ids
+        run: |
+          echo "uid=$(id -u)" >> "$GITHUB_OUTPUT"
+          echo "gid=$(id -g)" >> "$GITHUB_OUTPUT"
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: usage-image
+
+      - name: Load image
+        run: docker load -i usage-image.tar
+
+      - name: Run script.sh inside the image
+        run: |
+          docker run --rm \
+            --user "${{ steps.ids.outputs.uid }}:${{ steps.ids.outputs.gid }}" \
+            --workdir /home/rafaeldtinoco \
+            -e HOME=/home/rafaeldtinoco \
+            -e GOROOT=/usr/lib/go \
+            -e GOPATH=/home/rafaeldtinoco/go \
+            -e PATH=/usr/lib/go/bin:/home/rafaeldtinoco/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+            -v "${{ github.workspace }}/script.sh:/script.sh:ro" \
+            usage:ci

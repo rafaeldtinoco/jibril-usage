@@ -1,0 +1,39 @@
+services:
+  usage:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: usage
+      args:
+        uid: ${UID:-1000}
+        gid: ${GID:-1000}
+    image: usage:latest
+    container_name: usage
+    hostname: usage
+    user: "${UID:-1000}:${GID:-1000}"
+    working_dir: /home/rafaeldtinoco
+    volumes:
+      - go-cache:/home/rafaeldtinoco/go
+    environment:
+      - HOME=/home/rafaeldtinoco
+      - GOROOT=/usr/lib/go
+      - GOPATH=/home/rafaeldtinoco/go
+      - PATH=/usr/lib/go/bin:/home/rafaeldtinoco/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    stdin_open: true
+    tty: true
+    entrypoint: ["/script.sh"]
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN
+    privileged: false
+    #
+  usage-repo-script:
+    profiles: ["repo-script"]
+    extends:
+      service: usage
+    volumes:
+      - go-cache:/home/rafaeldtinoco/go
+      - ./script.sh:/script.sh:ro
+    #
+volumes:
+  go-cache:
