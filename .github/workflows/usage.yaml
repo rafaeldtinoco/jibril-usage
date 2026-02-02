@@ -5,8 +5,19 @@ on:
       given_ref:
         description: Pick a tag (eg. v0.0)
         required: false
-
 jobs:
+  garnet:
+    name: Garnet Runtime Security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Garnet Scanner
+        uses: garnet-org/action@v0
+        with:
+          api_token: ${{ secrets.GARNET_API_TOKEN }}
+        env:
+          GARNET_API_TOKEN: ${{ secrets.GARNET_API_TOKEN }}
+    #
   build:
     name: Build usage image
     runs-on: ubuntu-24.04
@@ -16,7 +27,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
-
+        #
       - name: Checkout specific ref if provided
         if: github.event.inputs.given_ref != ''
         run: |
@@ -26,16 +37,16 @@ jobs:
           git clean -fd
           git submodule update --init --recursive
           echo "Checked out ref: $(git rev-parse HEAD)"
-
+        #
       - name: Capture runner UID/GID
         id: ids
         run: |
           echo "uid=$(id -u)" >> "$GITHUB_OUTPUT"
           echo "gid=$(id -g)" >> "$GITHUB_OUTPUT"
-
+        #
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
+        #
       - name: Build usage image (cached)
         uses: docker/build-push-action@v6
         with:
@@ -48,16 +59,16 @@ jobs:
             gid=${{ steps.ids.outputs.gid }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
+        #
       - name: Export image artifact
         run: docker save usage:ci -o usage-image.tar
-
+        #
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         with:
           name: usage-image
           path: usage-image.tar
-
+        #
   run:
     name: Run repo script
     needs: build
@@ -65,21 +76,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
+        #
       - name: Capture runner UID/GID
         id: ids
         run: |
           echo "uid=$(id -u)" >> "$GITHUB_OUTPUT"
           echo "gid=$(id -g)" >> "$GITHUB_OUTPUT"
-
+        #
       - name: Download image artifact
         uses: actions/download-artifact@v4
         with:
           name: usage-image
-
+        #
       - name: Load image
         run: docker load -i usage-image.tar
-
+        #
       - name: Run script.sh inside the image
         run: |
           docker run --rm \
