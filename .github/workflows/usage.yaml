@@ -102,3 +102,42 @@ jobs:
             -e PATH=/usr/lib/go/bin:/home/rafaeldtinoco/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
             -v "${{ github.workspace }}/script.sh:/script.sh:ro" \
             usage:ci
+        #
+      - name: Stop Jibril
+        run: |
+          sleep 10
+          sudo -E systemctl daemon-reload || true
+          {
+            sudo -E tail -f /var/log/jibril.log &
+            TAIL_PID=$!
+            sudo -E systemctl stop jibril.service || true
+            sleep 5
+            kill $TAIL_PID || true
+          }
+        #
+      - name: Jibril Logs
+        run: |
+          sudo -E cat /var/log/jibril.log || true
+        #
+      - name: Jibril Errors
+        run: |
+          sudo -E cat /var/log/jibril.err || true
+        #
+      - name: Jibril Events
+        run: |
+          sudo -E cat /var/log/jibril.out | jq || true
+        #
+      - name: Fail on Errors
+        run: |
+          err_file="/var/log/jibril.err"
+          if [[ -s "$err_file" ]]; then
+            echo "Detected errors or warnings in $err_file:"
+            sudo -E cat "$err_file" || true
+            exit 1
+          fi
+        #
+      - name: Start Jibril
+        run: |
+          sudo -E systemctl start jibril.service || true
+          sleep 5
+        #
