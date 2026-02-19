@@ -98,6 +98,16 @@ jobs:
         run: |
           sudo -E cat /var/log/jibril.out | jq || true
 
+      - name: Jibril Summary Event
+        if: always()
+        run: |
+          sudo -E cat /var/log/jibril.out | jq -s 'map(select(.metadata.kind == "summary")) | .[0] // empty' || true
+
+      - name: Jibril Profiler Report
+        if: always()
+        run: |
+          sudo -E cat /var/log/jibril.out | jq -s 'map(select(.metadata.kind == "profiler")) | .[0] // empty' || true
+
       - name: Fail on Errors
         if: always()
         run: |
