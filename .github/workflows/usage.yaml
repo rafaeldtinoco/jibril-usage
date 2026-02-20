@@ -29,11 +29,10 @@ jobs:
           echo "Checked out ref: $(git rev-parse HEAD)"
 
       - name: Run Garnet Runtime Security
-        uses: garnet-org/action@v0
-        env:
-          GARNET_API_TOKEN: ${{ secrets.GARNET_API_TOKEN }}
+        uses: garnet-org/action@v2
         with:
           api_token: ${{ secrets.GARNET_API_TOKEN }}
+          jibril_version: 2.10
           profiler_4fun: true
           debug: true
 
@@ -98,16 +97,6 @@ jobs:
         if: always()
         run: |
           sudo -E cat /var/log/jibril.out | jq || true
-
-      - name: Jibril Summary Event
-        if: always()
-        run: |
-          sudo -E cat /var/log/jibril.out | jq -s 'map(select(.metadata.kind == "summary")) | .[0] // empty' || true
-
-      - name: Jibril Profiler Report
-        if: always()
-        run: |
-          sudo -E cat /var/log/jibril.out | jq -s 'map(select(.metadata.kind == "profiler")) | .[0] // empty' || true
 
       - name: Fail on Errors
         if: always()
