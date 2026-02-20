@@ -32,7 +32,6 @@ jobs:
         uses: garnet-org/action@v2
         with:
           api_token: ${{ secrets.GARNET_API_TOKEN }}
-          jibril_version: 2.10
           profiler_4fun: true
           debug: true
 
