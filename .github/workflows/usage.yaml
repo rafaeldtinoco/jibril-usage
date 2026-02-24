@@ -33,7 +33,7 @@ jobs:
         with:
           api_url: https://dev-api.garnet.ai
           api_token: ${{ secrets.GARNET_API_TOKEN }}
-          profiler_4fun: true
+          profiler_4fun: false
           debug: true
 
       - name: Capture runner UID/GID
