@@ -35,6 +35,7 @@ jobs:
           api_token: ${{ secrets.GARNET_API_TOKEN }}
           # profiler_4fun: true
           debug: true
+          jibril_version: v0.0
 
       - name: Capture runner UID/GID
         id: ids
