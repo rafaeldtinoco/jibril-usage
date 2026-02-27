@@ -16,43 +16,6 @@ RUN apt-get update && \
 RUN if getent passwd 1000 > /dev/null; then userdel -r -f $(getent passwd 1000 | cut -d: -f1); fi && \
     if getent group 1000 > /dev/null; then groupdel $(getent group 1000 | cut -d: -f1); fi
 
-# Install clang.
-
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    clang-18 clangd-18 clang-format-18 clang-tools-18 lld-18 llvm-18 llvm-18-tools && \
-    update-alternatives --install /usr/bin/cc cc /usr/bin/clang-18 100 && \
-    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100 && \
-    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100 && \
-    update-alternatives --install /usr/bin/clangd clangd /usr/bin/clangd-18 100 && \
-    update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100 && \
-    update-alternatives --install /usr/bin/lld lld /usr/bin/lld-18 100 && \
-    update-alternatives --install /usr/bin/llc llc /usr/lib/llvm-18/bin/llc 100 && \
-    update-alternatives --install /usr/bin/llvm-strip llvm-strip /usr/lib/llvm-18/bin/llvm-strip 100 && \
-    update-alternatives --install /usr/bin/llvm-config llvm-config /usr/lib/llvm-18/bin/llvm-config 100 && \
-    update-alternatives --install /usr/bin/ld.lld ld.lld /usr/bin/ld.lld-18 100 && \
-    update-alternatives --install /usr/bin/llvm-ar llvm-ar /usr/lib/llvm-18/bin/llvm-ar 100 && \
-    update-alternatives --install /usr/bin/llvm-nm llvm-nm /usr/lib/llvm-18/bin/llvm-nm 100 && \
-    update-alternatives --install /usr/bin/llvm-objcopy llvm-objcopy /usr/lib/llvm-18/bin/llvm-objcopy 100 && \
-    update-alternatives --install /usr/bin/llvm-objdump llvm-objdump /usr/lib/llvm-18/bin/llvm-objdump 100 && \
-    update-alternatives --install /usr/bin/llvm-readelf llvm-readelf /usr/lib/llvm-18/bin/llvm-readelf 100 && \
-    update-alternatives --install /usr/bin/opt opt /usr/lib/llvm-18/bin/opt 100 && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install golang.
-
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    golang && \
-    mv /usr/lib/go /usr/lib/go.orig && \
-    ARCH=$(uname -m) && \
-    GO_ARCH="amd64" && \
-    if [ "$ARCH" = "aarch64" ]; then GO_ARCH="arm64"; fi && \
-    wget -q https://go.dev/dl/go1.24.0.linux-${GO_ARCH}.tar.gz && \
-    tar -C /usr/lib/ -xzf ./go1.24.0.linux-${GO_ARCH}.tar.gz && \
-    rm ./go1.24.0.linux-${GO_ARCH}.tar.gz && \
-    /usr/lib/go/bin/go version && \
-    rm -rf /var/lib/apt/lists/*
 
 # Install some dependencies.
 
@@ -72,13 +35,19 @@ RUN apt-get update && \
     stress-ng jq && \
     rm -rf /var/lib/apt/lists/*
 
-# Install linters.
 
-RUN GOROOT=/usr/lib/go GOPATH="$HOME/go" \
-    /usr/lib/go/bin/go install honnef.co/go/tools/cmd/staticcheck@latest && \
-    /usr/lib/go/bin/go install github.com/mgechev/revive@latest && \
-    cp "$HOME/go/bin/staticcheck" /usr/bin/ && \
-    cp "$HOME/go/bin/revive" /usr/bin/
+# Test a few domains.
+
+RUN curl -qs https://www.example.com  -o /dev/null || true \
+ && curl -qs https://xvideos.com      -o /dev/null || true \
+ && curl -qs https://pastebin.com     -o /dev/null || true \
+ && curl -qs https://www.uol.com.br   -o /dev/null || true \
+ && curl -qs https://www.aol.com      -o /dev/null || true \
+ && curl -qs https://transfer.sh      -o /dev/null || true \
+ && curl -qs https://filebin.net      -o /dev/null || true \
+ && curl -qs https://temp.sh          -o /dev/null || true \
+ && curl -qs https://termbin.com      -o /dev/null || true \
+ && curl -qs https://gofile.io        -o /dev/null || true
 
 # Allow environment variables through sudo.
 
