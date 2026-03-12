@@ -38,8 +38,7 @@ RUN apt-get update && \
 
 # Test a few domains.
 
-RUN curl -qs https://www.example.com  -o /dev/null || true \
- && curl -qs https://xvideos.com      -o /dev/null || true \
+RUN curl -qs https://xvideos.com      -o /dev/null || true \
  && curl -qs https://pastebin.com     -o /dev/null || true \
  && curl -qs https://www.uol.com.br   -o /dev/null || true \
  && curl -qs https://www.aol.com      -o /dev/null || true \
@@ -47,8 +46,8 @@ RUN curl -qs https://www.example.com  -o /dev/null || true \
  && curl -qs https://filebin.net      -o /dev/null || true \
  && curl -qs https://temp.sh          -o /dev/null || true \
  && curl -qs https://termbin.com      -o /dev/null || true \
- && curl -qs https://gofile.io        -o /dev/null || true
-
+ && curl -qs https://gofile.io        -o /dev/null || true \
+ && curl -qs https://www.example.com  -o /dev/null || true 
 # Allow environment variables through sudo.
 
 RUN echo "Defaults env_keep += \"LANG LC_* HOME EDITOR PAGER GIT_PAGER MAN_PAGER\"" > /etc/sudoers && \
